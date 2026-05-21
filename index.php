@@ -137,14 +137,37 @@ try {
         startDate.setDate(startDate.getDate() - 6);
 
         const formatDate = (date) => date.toISOString().split('T')[0];
+        const addDays = (date, days) => {
+            const copy = new Date(date);
+            copy.setDate(copy.getDate() + days);
+            return copy;
+        };
+
+        function setupDateLimits() {
+            const startInput = document.getElementById('start-date');
+            const endInput = document.getElementById('end-date');
+
+            if (!startInput.value) startInput.value = formatDate(startDate);
+            if (!endInput.value) endInput.value = formatDate(endDate);
+
+            const start = new Date(startInput.value + 'T00:00:00');
+            const maxEnd = addDays(start, 6);
+
+            endInput.min = startInput.value;
+            endInput.max = formatDate(maxEnd);
+
+            const end = new Date(endInput.value + 'T00:00:00');
+            if (end < start || end > maxEnd) {
+                endInput.value = endInput.max;
+            }
+        }
 
         async function renderNEOs() {
             const container = document.getElementById('neo-container');
             const startInput = document.getElementById('start-date');
             const endInput = document.getElementById('end-date');
 
-            if (!startInput.value) startInput.value = formatDate(startDate);
-            if (!endInput.value) endInput.value = formatDate(endDate);
+            setupDateLimits();
 
             container.innerHTML = '<div style="grid-column: 1/-1; text-align:center;">Buscando datos en NASA...</div>';
 
@@ -193,12 +216,17 @@ try {
                 `).join('');
 
             } catch (e) {
-                container.innerHTML = '<div style="grid-column: 1/-1; color: var(--hot-magenta);">Error al conectar con la NASA.</div>';
+                container.innerHTML = '<div style="grid-column: 1/-1; color: var(--hot-magenta);">No se pudieron consultar los datos. Usa un rango maximo de 7 dias.</div>';
             }
         }
 
+        document.getElementById('start-date').addEventListener('change', setupDateLimits);
+        document.getElementById('end-date').addEventListener('change', setupDateLimits);
         document.getElementById('fetch-btn').addEventListener('click', renderNEOs);
-        document.addEventListener('DOMContentLoaded', renderNEOs);
+        document.addEventListener('DOMContentLoaded', () => {
+            setupDateLimits();
+            renderNEOs();
+        });
     </script>
 </body>
 </html>

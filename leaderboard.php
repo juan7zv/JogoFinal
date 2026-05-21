@@ -169,7 +169,9 @@ if ($filtroId !== '') {
                     <?php if (empty($historial)): ?>
                         <p style="text-align:center; color:#aaa;">No hay partidas para este filtro.</p>
                     <?php else: ?>
-                        <canvas id="progresoChart" style="min-height: 280px;"></canvas>
+                        <div style="height: 320px; position: relative;">
+                            <canvas id="progresoChart"></canvas>
+                        </div>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
@@ -214,7 +216,11 @@ if ($filtroId !== '') {
         <script>
             const ctx = document.getElementById('progresoChart').getContext('2d');
             const labels = <?= json_encode(array_column($historial, 'dia')) ?>;
-            const dataPuntos = <?= json_encode(array_column($historial, 'puntaje')) ?>;
+            const dataPuntos = <?= json_encode(array_column($historial, 'puntaje')) ?>.map(Number);
+            const minPuntaje = Math.min(...dataPuntos);
+            const maxPuntaje = Math.max(...dataPuntos);
+            const rango = Math.max(maxPuntaje - minPuntaje, 100);
+            const margen = Math.ceil(rango * 0.15);
 
             new Chart(ctx, {
                 type: 'line',
@@ -236,7 +242,16 @@ if ($filtroId !== '') {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#aaa' } },
+                        y: {
+                            suggestedMin: Math.max(0, minPuntaje - margen),
+                            suggestedMax: maxPuntaje + margen,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: {
+                                color: '#aaa',
+                                maxTicksLimit: 6,
+                                callback: value => Number(value).toLocaleString()
+                            }
+                        },
                         x: { grid: { display: false }, ticks: { color: '#aaa' } }
                     },
                     plugins: { legend: { display: false } }
